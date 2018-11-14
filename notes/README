@@ -1,0 +1,5 @@
+1. Assume that the TX has 192.168.168.55/24
+2. Assign an address 192.168.168.123/24 to the interface
+3. Start receive.sh (which emits no data in this point)
+4. Kick heatbeat.sh in another TTY
+5. receive.sh emits JPEG frames
