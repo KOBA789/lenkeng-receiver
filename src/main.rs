@@ -1,10 +1,12 @@
-use std::io::Write;
 use std::net::UdpSocket;
 use std::net::Ipv4Addr;
 use std::thread;
 use std::time::Duration;
 
+mod turbojpeg;
+
 const PACKET_SIZE: usize = 1024;
+const MAX_CHUNK: usize = 1000;
 const MAGIC_PACKET: [u8; 0x17] = [
     0x54, 0x46, 0x36, 0x7a, 0x60, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x03, 0x01, 0x00, 0x26,
     0x00, 0x00, 0x00, 0x00, 0x02, 0x34, 0xc2,
@@ -19,20 +21,24 @@ fn main() {
     let membership: Ipv4Addr = "226.2.2.2".parse().unwrap();
     let ifaddr: Ipv4Addr = "192.168.168.123".parse().unwrap();
     socket.join_multicast_v4(&membership, &ifaddr).expect("failed to join to multicast group");
-    let mut buf: Vec<u8> = vec![0; PACKET_SIZE];
-    let mut is_open = false;
-    println!("--myboundary\nContent-Type: image/jpeg\n");
+
+    let mut pixels = Vec::<u8>::new();
+    let mut jpeg_buf = Vec::<u8>::with_capacity(PACKET_SIZE * MAX_CHUNK);
+    let mut chunk_buf: Vec<u8> = vec![0; PACKET_SIZE];
+    let mut dec = turbojpeg::Decompress::new().unwrap();
+
     loop {
-        socket.recv(&mut buf).expect("failed to read from socket");
-        //let frame_n = (buf[0] as u16) * 0xFF + buf[1] as u16;
-        let part_n = (buf[2] as u16) * 0xFF + buf[3] as u16;
+        socket.recv(&mut chunk_buf).expect("failed to read from socket");
+        let part_n = (chunk_buf[2] as u16) * 0xFF + chunk_buf[3] as u16;
         if part_n == 0 {
-            println!("\n--myboundary\nContent-Type: image/jpeg\n");
-            is_open = true;
+            jpeg_buf.clear();
         }
-        if is_open {
-            std::io::stdout().write_all(&buf[4..]).expect("could not write out buffer");
+        jpeg_buf.extend_from_slice(&chunk_buf[4..]);
+        let header = dec.decompress_header(&jpeg_buf);
+        if header.dst_size() > pixels.len() {
+            pixels.resize(header.dst_size(), 0);
         }
+        let _dec_ret = dec.decompress(&jpeg_buf, &header, pixels.as_mut_slice());
     }
 }
 

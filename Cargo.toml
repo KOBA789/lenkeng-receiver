@@ -5,3 +5,4 @@ authors = ["Hidekazu Kobayashi <hidekazu-kobayashi@cookpad.com>"]
 edition = "2018"
 
 [dependencies]
+libturbojpeg-sys = { path = "./libturbojpeg-sys" }
