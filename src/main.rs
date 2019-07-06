@@ -31,7 +31,7 @@ fn main() {
 
     loop {
         socket.recv(&mut chunk_buf).expect("failed to read from socket");
-        let part_n = (chunk_buf[2] as u16) * 0xFF + chunk_buf[3] as u16;
+        let part_n = (chunk_buf[2] as u16) * 0x100 + chunk_buf[3] as u16;
         if part_n == 0 {
             jpeg_buf.clear();
         }
