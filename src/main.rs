@@ -34,11 +34,13 @@ fn main() {
             jpeg_buf.clear();
         }
         jpeg_buf.extend_from_slice(&chunk_buf[4..]);
-        let header = dec.decompress_header(&jpeg_buf);
-        if header.dst_size() > pixels.len() {
-            pixels.resize(header.dst_size(), 0);
+        if part_n > 0x4000 {
+            let header = dec.decompress_header(&jpeg_buf);
+            if header.dst_size() > pixels.len() {
+                pixels.resize(header.dst_size(), 0);
+            }
+            let _dec_ret = dec.decompress(&jpeg_buf, &header, pixels.as_mut_slice());
         }
-        let _dec_ret = dec.decompress(&jpeg_buf, &header, pixels.as_mut_slice());
     }
 }
 
