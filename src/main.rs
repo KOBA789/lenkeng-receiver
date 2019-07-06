@@ -1,7 +1,7 @@
 use std::net::UdpSocket;
 use std::net::Ipv4Addr;
 use std::thread;
-use std::time::Duration;
+use std::time::{self, Duration};
 
 mod turbojpeg;
 
@@ -26,6 +26,8 @@ fn main() {
     let mut jpeg_buf = Vec::<u8>::with_capacity(PACKET_SIZE * MAX_CHUNK);
     let mut chunk_buf: Vec<u8> = vec![0; PACKET_SIZE];
     let mut dec = turbojpeg::Decompress::new().unwrap();
+    let mut decoded_frames = 0;
+    let mut last_decoded_time = time::SystemTime::now();
 
     loop {
         socket.recv(&mut chunk_buf).expect("failed to read from socket");
@@ -40,6 +42,14 @@ fn main() {
                 pixels.resize(header.dst_size(), 0);
             }
             let _dec_ret = dec.decompress(&jpeg_buf, &header, pixels.as_mut_slice());
+            decoded_frames += 1000;
+            let elapsed = last_decoded_time.elapsed().unwrap();
+            if elapsed >= Duration::from_secs(1) {
+                let fps = decoded_frames / elapsed.as_millis();
+                println!("FPS: {}", fps);
+                decoded_frames = 0;
+                last_decoded_time = time::SystemTime::now();
+            }
         }
     }
 }
