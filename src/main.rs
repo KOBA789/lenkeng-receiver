@@ -42,10 +42,10 @@ fn main() {
                 pixels.resize(header.dst_size(), 0);
             }
             let _dec_ret = dec.decompress(&jpeg_buf, &header, pixels.as_mut_slice());
-            decoded_frames += 1000;
+            decoded_frames += 1;
             let elapsed = last_decoded_time.elapsed().unwrap();
             if elapsed >= Duration::from_secs(1) {
-                let fps = decoded_frames / elapsed.as_millis();
+                let fps = (decoded_frames * 1000) as f64 / elapsed.as_millis() as f64;
                 println!("FPS: {}", fps);
                 decoded_frames = 0;
                 last_decoded_time = time::SystemTime::now();
